@@ -1,5 +1,5 @@
-export default function Page({ params }: { params: { url: string } }) {
-  console.log(params.url);
+export default function Page({ params }: { params: { id: string } }) {
+  console.log(params.id);
   return (
     <main className="min-h-screen">
       <div className="flex items-center justify-center w-full min-h-screen">

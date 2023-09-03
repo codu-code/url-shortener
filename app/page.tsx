@@ -1,16 +1,44 @@
-import type { SyntheticEvent } from "react";
+"use client";
+
+import { useState, SyntheticEvent } from "react";
+
+type UrlResponse = {
+  originalUrl: string;
+  shortId: string;
+};
 
 export default function Home() {
-  const handleSubmit = (event: SyntheticEvent) => {
+  const [urlShortenedState, setUrlShortenedState] = useState<
+    "success" | "error" | "loading" | "initial"
+  >("initial");
+
+  const [urlData, setUrlData] = useState<null | UrlResponse>(null);
+
+  const handleSubmit = async (event: SyntheticEvent) => {
     event.preventDefault();
+    setUrlShortenedState("loading");
     const target = event.target as typeof event.target & {
       url: { value: string };
-      alias: { value: string };
+      custom: { value: string };
     };
     const url = target.url.value;
-    const alias = target.alias.value;
+    const custom = target.custom.value;
 
-    console.log({ url, alias });
+    try {
+      const response = await fetch("api/shorten", {
+        body: JSON.stringify({ url, custom }),
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+      });
+      const json = await response.json();
+      setUrlData(json as UrlResponse);
+      setUrlShortenedState("success");
+    } catch (error) {
+      setUrlShortenedState("error");
+    }
   };
 
   return (
@@ -27,7 +55,7 @@ export default function Home() {
 
             <div className="mt-10">
               <div>
-                <form action="submit" method="POST" className="space-y-6">
+                <form className="space-y-6" onSubmit={handleSubmit}>
                   <div>
                     <label
                       htmlFor="url"
@@ -48,7 +76,7 @@ export default function Home() {
 
                   <div>
                     <label
-                      htmlFor="alias"
+                      htmlFor="custom"
                       className="block font-medium leading-6 text-gray-900"
                     >
                       Customize{" "}
@@ -58,9 +86,9 @@ export default function Home() {
                     </label>
                     <div className="mt-2">
                       <input
-                        id="alias"
-                        name="alias"
-                        type="alias"
+                        id="custom"
+                        name="custom"
+                        type="custom"
                         className="block w-full rounded-md border-0 py-1.5 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-cyan-600 sm:text-sm sm:leading-6"
                       />
                     </div>

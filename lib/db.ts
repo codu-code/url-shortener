@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-const connectDB = async () => {
+export const db = async () => {
   if (!process.env.MONGODB_URI) {
     throw new Error("MONGODB_URI not provided");
   }
