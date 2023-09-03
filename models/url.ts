@@ -21,7 +21,7 @@ const urlSchema = new mongoose.Schema(
       type: String,
       unique: true,
       default: () => nanoid(6),
-      minLength: [4, "URL must be longer than 3 characters"],
+      minLength: [4, "Custom path must be longer than 3 characters"],
       // ~99 days or 2M IDs needed, in order to have a 1% probability of at least one collision.
       match: [
         /^[A-Za-z0-9\-._~:@!$&'()*+,;=\/]+$/,

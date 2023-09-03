@@ -14,7 +14,7 @@ export async function GET(
     if (!response) {
       throw new Error("Not found.");
     }
-    console.log("AKSJDhkash");
+
     return NextResponse.redirect(response.originalUrl);
   } catch (error) {
     const url = new URL("/404", req.url);

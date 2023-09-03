@@ -1,22 +1,41 @@
 "use client";
 
 import { useState, SyntheticEvent } from "react";
+import { Toaster, toast } from "sonner";
 
-type UrlResponse = {
+type Error = {
+  url?: string;
+  custom?: string;
+};
+
+type Response = {
   originalUrl: string;
   shortId: string;
 };
 
-export default function Home() {
-  const [urlShortenedState, setUrlShortenedState] = useState<
-    "success" | "error" | "loading" | "initial"
-  >("initial");
+type State =
+  | {
+      status: "error";
+      error: Error | null;
+    }
+  | {
+      status: "loading" | "initial";
+      data: null;
+    }
+  | {
+      status: "success";
+      data: Response;
+    };
 
-  const [urlData, setUrlData] = useState<null | UrlResponse>(null);
+export default function Home() {
+  const [pageData, setPageData] = useState<State>({
+    status: "initial",
+    data: null,
+  });
 
   const handleSubmit = async (event: SyntheticEvent) => {
     event.preventDefault();
-    setUrlShortenedState("loading");
+    setPageData({ status: "loading", data: null });
     const target = event.target as typeof event.target & {
       url: { value: string };
       custom: { value: string };
@@ -25,7 +44,7 @@ export default function Home() {
     const custom = target.custom.value;
 
     try {
-      const response = await fetch("api/shorten", {
+      const res = await fetch("api/shorten", {
         body: JSON.stringify({ url, custom }),
         method: "POST",
         headers: {
@@ -33,13 +52,32 @@ export default function Home() {
           "Content-Type": "application/json",
         },
       });
-      const json = await response.json();
-      setUrlData(json as UrlResponse);
-      setUrlShortenedState("success");
+      const data = await res.json();
+
+      if (data.error) {
+        return setPageData({ error: data.error as Error, status: "error" });
+      }
+
+      setPageData({ data: data as Response, status: "success" });
     } catch (error) {
-      setUrlShortenedState("error");
+      toast("Something went wrong. Please try again.");
+      return setPageData({ error: null, status: "error" });
     }
   };
+
+  const copyContent = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast("Copied to clipboard.");
+    } catch (err) {
+      toast("Failed to copy. Sorry!");
+    }
+  };
+
+  const shortUrl =
+    pageData.status === "success"
+      ? `${window.origin}/${pageData.data?.shortId}`
+      : null;
 
   return (
     <main className="flex min-h-full flex-1">
@@ -49,12 +87,14 @@ export default function Home() {
             <div>
               <img className="h-12 w-auto" src="/logo.png" alt="Your Company" />
               <h2 className="mt-8 text-2xl font-bold leading-9 tracking-tight text-gray-900">
-                Shorten a long URL
+                {pageData.status === "success"
+                  ? "Here's your new link!"
+                  : "Shorten a long URL"}
               </h2>
             </div>
 
             <div className="mt-10">
-              <div>
+              {pageData.status !== "success" && (
                 <form className="space-y-6" onSubmit={handleSubmit}>
                   <div>
                     <label
@@ -69,8 +109,13 @@ export default function Home() {
                         name="url"
                         type="url"
                         required
-                        className="block w-full rounded-md border-0 py-1.5 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-cyan-600 sm:text-sm sm:leading-6"
+                        aria-invalid="true"
+                        aria-describedby="url-error"
+                        className=" px-2 block w-full rounded-md border-0 py-1.5 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-cyan-600 sm:text-sm sm:leading-6"
                       />
+                      <p className="mt-2 text-sm text-red-600" id="url-error">
+                        {pageData.status === "error" && pageData.error?.url}
+                      </p>
                     </div>
                   </div>
 
@@ -89,8 +134,11 @@ export default function Home() {
                         id="custom"
                         name="custom"
                         type="custom"
-                        className="block w-full rounded-md border-0 py-1.5 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-cyan-600 sm:text-sm sm:leading-6"
+                        className="px-2 block w-full rounded-md border-0 py-1.5 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-cyan-600 sm:text-sm sm:leading-6"
                       />
+                      <p className="mt-2 text-sm text-red-600" id="url-error">
+                        {pageData.status === "error" && pageData.error?.custom}
+                      </p>
                     </div>
                   </div>
 
@@ -103,7 +151,30 @@ export default function Home() {
                     </button>
                   </div>
                 </form>
-              </div>
+              )}
+              {pageData.status === "success" && shortUrl && (
+                <div>
+                  <p className="px-2 block w-full rounded-md py-1.5 shadow-sm sm:text-sm sm:leading-6 mb-6 ring-1 ring-inset ring-gray-300">
+                    {shortUrl}
+                  </p>
+                  <div className="flex gap-4">
+                    <button
+                      onClick={() => copyContent(shortUrl)}
+                      className="flex w-full justify-center rounded-md border-cyan-600 border px-3 py-1.5 font-semibold leading-6 text-cyan-600 shadow-sm hover:bg-cyan-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-600"
+                    >
+                      Copy
+                    </button>
+                    <button
+                      onClick={() => {
+                        setPageData({ status: "initial", data: null });
+                      }}
+                      className="flex w-full justify-center rounded-md bg-cyan-600 px-3 py-1.5 font-semibold leading-6 text-white shadow-sm hover:bg-cyan-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-600"
+                    >
+                      Shorten Another
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -112,9 +183,10 @@ export default function Home() {
         <img
           className="absolute inset-0 h-full w-full object-cover"
           src="https://images.unsplash.com/photo-1496449903678-68ddcb189a24?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1770&q=80"
-          alt=""
+          alt="This is the sign you've been looking for."
         />
       </div>
+      <Toaster position="bottom-left" />
     </main>
   );
 }
