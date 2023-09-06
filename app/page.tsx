@@ -145,9 +145,17 @@ export default function Home() {
                   <div>
                     <button
                       type="submit"
-                      className="flex w-full justify-center rounded-md bg-cyan-600 px-3 py-1.5 font-semibold leading-6 text-white shadow-sm hover:bg-cyan-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-600"
+                      disabled={pageData.status === "loading"}
+                      className="flex w-full justify-center rounded-md bg-cyan-600 px-3 py-1.5 font-semibold leading-6 text-white shadow-sm hover:bg-cyan-500 disabled:hover:bg-cyan-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-600"
                     >
-                      Generate
+                      {pageData.status === "loading" ? (
+                        <span
+                          aria-label="loading"
+                          className="h-6 w-6 rounded-full animate-spin border-cyan-200 border-l-cyan-900 border-4"
+                        />
+                      ) : (
+                        "Generate"
+                      )}
                     </button>
                   </div>
                 </form>
