@@ -8,6 +8,13 @@ import mongoose from "mongoose";
 export async function POST(req: Request) {
   const { url, custom } = await req.json();
 
+  if (url.includes("urls.cat")) {
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 }
+    );
+  }
+
   const id = custom?.length ? custom : nanoid(10);
 
   try {
